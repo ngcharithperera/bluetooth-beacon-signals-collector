@@ -14,4 +14,20 @@
         android:layout_y="31dp"
         android:text="Button" />
 
+    <Button
+        android:id="@+id/btnStartMeter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_x="88dp"
+        android:layout_y="342dp"
+        android:text="Start Meter" />
+
+    <Button
+        android:id="@+id/btnStopMeter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_x="104dp"
+        android:layout_y="400dp"
+        android:text="Stop Meter" />
+
 </AbsoluteLayout>

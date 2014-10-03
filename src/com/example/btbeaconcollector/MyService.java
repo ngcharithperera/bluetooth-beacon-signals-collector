@@ -1,5 +1,8 @@
 package com.example.btbeaconcollector;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,9 +14,11 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothAdapter.LeScanCallback;
 import android.content.Intent;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import au.com.bytecode.opencsv.CSVWriter;
 
 public class MyService extends Service {
 
@@ -21,14 +26,15 @@ public class MyService extends Service {
 	private BluetoothAdapter mBluetoothAdapter;
 
 	public static String BTData = "";
+
+	public String FOLDER_NAME = "BT";
 	public static ArrayList<BTBeacon> BTBeaconArray = new ArrayList<BTBeacon>();
-	
-	
-	
+	public CSVWriter writer;
+
 	private final Handler handler = new Handler();
 
 	private int numIntent;
-
+	public String fullBTDataRecord="";
 	// It's the code we want our Handler to execute to send data
 	private Runnable sendData = new Runnable() {
 		// the specific method which will be executed by the handler
@@ -51,16 +57,15 @@ public class MyService extends Service {
 
 			// Here we fill the Intent with our data, here just a string with an
 			// incremented number in it.
-			
-			
-			//String s = "01 33 44 55 66 01 #"+50+"#1.4142135623730951";
-			//s=generateString();
-			
+
+			// String s = "01 33 44 55 66 01 #"+50+"#1.4142135623730951";
+			// s=generateString();
+
 			sendIntent.putExtra(Intent.EXTRA_TEXT, BTData);
 			// And here it goes ! our message is send to any other app that want
 			// to listen to it.
 			sendBroadcast(sendIntent);
-			//Log.d("charith", "Intent " + numIntent);
+			// Log.d("charith", "Intent " + numIntent);
 
 			// In our case we run this method each second with postDelayed
 			handler.removeCallbacks(this);
@@ -71,10 +76,7 @@ public class MyService extends Service {
 			// TODO Auto-generated method stub
 			return null;
 		}
-		
-		
-		
-		
+
 	};
 
 	// When service is started
@@ -89,12 +91,12 @@ public class MyService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		initBluetooth();
-		Log.d("charith", "Intent " );
+		Log.d("charith", "Intent ");
 		numIntent = 0;
 		// We first start the Handler
 		handler.removeCallbacks(sendData);
 		handler.postDelayed(sendData, 1000);
-		
+
 		return START_STICKY;
 	}
 
@@ -103,7 +105,7 @@ public class MyService extends Service {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	private String composeBTData() {
 		BTData = "";
 		for (int i = 0; i < BTBeaconArray.size(); i++) {
@@ -118,9 +120,74 @@ public class MyService extends Service {
 		// BTBeaconArray.clear();
 		return BTData;
 	}
-	
-	
+
+	private BTBeacon getBTBeacon(String id) {
+		boolean isOnList = false;
+		int index = 0;
+		for (int i = 0; i < BTBeaconArray.size(); i++) {
+
+			// Log.d("charith", BTBeaconArray.get(i).getId());
+			// Log.d("charith", id);
+
+			if (BTBeaconArray.get(i).getId().contains(id)) {
+				isOnList = true;
+				index = i;
+			}
+
+		}
+
+		if (isOnList) {
+			return BTBeaconArray.get(index);
+		} else {
+			BTBeacon vBTBeacon = new BTBeacon();
+			BTBeaconArray.add(vBTBeacon);
+			return vBTBeacon;
+		}
+
+	}
+
+	private String calculateSD(int rssi) {
+
+		List<Integer> list = new ArrayList<Integer>();
+		Integer total = 0;
+		Integer average = 0;
+		Integer sd = 0;
+		Double standardDeviation = 0.0;
+		DecimalFormat dec = new DecimalFormat("#.00");
+
+		System.out.println("adding new element");
+		System.out.println(list);
+		list.add(rssi);
+		if (list.size() > 50) {
+
+			for (Integer x : list) {
+				total += x;
+			}
+
+			average = total / list.size();
+			for (Integer x : list) {
+				sd += (x - average) * (x - average);
+			}
+			;
+
+			standardDeviation = Math.sqrt(sd / list.size());
+			list.remove(0);
+			total = 0;
+			sd = 0;
+		}
+		return standardDeviation.toString();
+	}
+
 	public void initBluetooth() {
+		try {
+			writer = new CSVWriter(new FileWriter(Environment
+					.getExternalStorageDirectory().getAbsolutePath()
+					+ File.separator + FOLDER_NAME + File.separator + "yourfile.csv"),
+					'\t');
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		Log.d("charith2", "initBluetooth");
 		// Bluetooth SETUP
 		final BluetoothManager manager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
@@ -133,101 +200,59 @@ public class MyService extends Service {
 					final byte[] scanRecord) {
 				Log.d("charith2", "onLeScan");
 				// code to be executed when a signal is heard
-				
-				
-				new Thread(new  Runnable() {
-					public void run() {
-						
-						Log.d("charith2", "22222");
 
-						String payload = Arrays.toString(scanRecord).substring(
-								78, 80);
-						Integer total = 0;
-						Integer average = 0;
-						Integer sd = 0;
-						DecimalFormat dec = new DecimalFormat("#.00");
+				// new Thread(new Runnable() {
+				// public void run() {
 
-						final StringBuilder stringBuilder = new StringBuilder(
-								scanRecord.length);
-						for (byte byteChar : scanRecord)
-							stringBuilder.append(String.format("%02X ",
-									byteChar));
+				Log.d("charith2", "22222");
 
-						String id = stringBuilder.substring(51, 69);
-						
+				String payload = Arrays.toString(scanRecord).substring(78, 80);
+				Integer total = 0;
+				Integer average = 0;
+				Integer sd = 0;
+				DecimalFormat dec = new DecimalFormat("#.00");
 
-						Log.d("charith2", id);
+				final StringBuilder stringBuilder = new StringBuilder(
+						scanRecord.length);
+				for (byte byteChar : scanRecord)
+					stringBuilder.append(String.format("%02X ", byteChar));
 
-						BTBeacon vBTBeacon = getBTBeacon(id);
-						vBTBeacon.setId(stringBuilder.substring(51, 69));
-						vBTBeacon.setRssi(Integer.toString(rssi));
-						vBTBeacon.setSd(calculateSD(rssi));
+				String id = stringBuilder.substring(51, 69);
 
-						composeBTData();
+				Log.d("charith2", id);
 
-						Log.d("charith2", BTData);
+				BTBeacon vBTBeacon = getBTBeacon(id);
+				vBTBeacon.setId(stringBuilder.substring(51, 69));
+				vBTBeacon.setRssi(Integer.toString(rssi));
+				vBTBeacon.setSd(calculateSD(rssi));
 
-					}
+				composeBTData();
 
-					private BTBeacon getBTBeacon(String id) {
-						boolean isOnList = false;
-						int index = 0;
-						for (int i = 0; i < BTBeaconArray.size(); i++) {
+				Log.d("charith2", BTData);
 
-							// Log.d("charith", BTBeaconArray.get(i).getId());
-							// Log.d("charith", id);
+				try {
+					long timestamp = System.currentTimeMillis();
+					
+					fullBTDataRecord = Long.toString(timestamp) +"#"+ id + "#"+ Integer.toString(rssi); 		
+							
+					// feed in your array (or convert your data to an
+					// array)
+					
+					//String[] entries = "first#second#third".split("#");
+					String[] entries = fullBTDataRecord.split("#");
+					writer.writeNext(entries);		
+					writer.flushQuietly();
+					//writer.close();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					
+				}
 
-							if (BTBeaconArray.get(i).getId().contains(id)) {
-								isOnList = true;
-								index = i;
-							}
+				// }
 
-						}
+				// }).start();
 
-						if (isOnList) {
-							return BTBeaconArray.get(index);
-						} else {
-							BTBeacon vBTBeacon = new BTBeacon();
-							BTBeaconArray.add(vBTBeacon);
-							return vBTBeacon;
-						}
-
-					}
-
-					private String calculateSD(int rssi) {
-
-						List<Integer> list = new ArrayList<Integer>();
-						Integer total = 0;
-						Integer average = 0;
-						Integer sd = 0;
-						Double standardDeviation = 0.0;
-						DecimalFormat dec = new DecimalFormat("#.00");
-
-						System.out.println("adding new element");
-						System.out.println(list);
-						list.add(rssi);
-						if (list.size() > 50) {
-
-							for (Integer x : list) {
-								total += x;
-							}
-
-							average = total / list.size();
-							for (Integer x : list) {
-								sd += (x - average) * (x - average);
-							}
-							;
-
-							standardDeviation = Math.sqrt(sd / list.size());
-							list.remove(0);
-							total = 0;
-							sd = 0;
-						}
-						return standardDeviation.toString();
-					}
-
-				}).start();
-				
 			}
 
 		};
@@ -236,5 +261,4 @@ public class MyService extends Service {
 		Log.d("MainActivityForTommy", "Scan was started");
 
 	}
-
 }
