@@ -18,6 +18,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 import au.com.bytecode.opencsv.CSVWriter;
 
 public class MyService extends Service {
@@ -86,6 +87,7 @@ public class MyService extends Service {
 		// We first start the Handler
 		handler.removeCallbacks(sendData);
 		handler.postDelayed(sendData, 1000);
+
 	}
 
 	@Override
@@ -98,6 +100,21 @@ public class MyService extends Service {
 		handler.postDelayed(sendData, 1000);
 
 		return START_STICKY;
+	}
+	
+
+	@Override
+	public void onDestroy() {
+		Toast toast = Toast.makeText(getApplicationContext(), "The service stopped", 3000);
+		toast.show();
+		super.onDestroy();
+	}
+
+	@Override
+	public void onCreate() {
+		Toast toast = Toast.makeText(getApplicationContext(), "The service Starteed", 3000);
+		toast.show();
+		super.onCreate();
 	}
 
 	@Override
@@ -242,6 +259,8 @@ public class MyService extends Service {
 					String[] entries = fullBTDataRecord.split("#");
 					writer.writeNext(entries);		
 					writer.flushQuietly();
+					
+					
 					//writer.close();
 				} catch (Exception e) {
 					// TODO Auto-generated catch block

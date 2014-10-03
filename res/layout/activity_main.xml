@@ -1,33 +1,38 @@
-<AbsoluteLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="com.example.btbeaconcollector.MainActivity"
     tools:ignore="MergeRootFrame" >
 
     <Button
-        android:id="@+id/btnButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_x="52dp"
-        android:layout_y="31dp"
-        android:text="Button" />
+        android:id="@+id/btnStartService"
+        android:layout_width="230dp"
+        android:layout_height="70dp"
+        android:text="Start Metering" />
 
     <Button
-        android:id="@+id/btnStartMeter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_x="88dp"
-        android:layout_y="342dp"
-        android:text="Start Meter" />
+        android:id="@+id/btnStopService"
+        android:layout_width="224dp"
+        android:layout_height="77dp"
+        android:text="Stop Metering" />
 
-    <Button
-        android:id="@+id/btnStopMeter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_x="104dp"
-        android:layout_y="400dp"
-        android:text="Stop Meter" />
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
 
-</AbsoluteLayout>
+        <TextView
+            android:id="@+id/tvDetails"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="#e4e4e4"
+            android:maxLines="1000"
+            android:scrollHorizontally="true"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </ScrollView>
+
+</LinearLayout>
