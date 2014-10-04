@@ -1,4 +1,6 @@
-package com.example.btbeaconcollector;
+package com.btbeaconmeter;
+
+import com.example.btbeaconcollector.R;
 
 import android.app.Activity;
 import android.app.ActionBar;
@@ -23,26 +25,28 @@ import android.os.Build;
 public class MainActivity extends Activity {
 
 	public static TextView tvDetails;
-	private MyReceiver receiver;
+	private BTDataReceiver receiver;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
 		tvDetails = (TextView) findViewById(R.id.tvDetails);
-		tvDetails
-				.setText("DFEWWWWWWWWWWFDSFDFdfdFDSFDSFDSFDSFDSFDSFDSFSDFs \n DFEWWWWWWWWWWFDSFDFdfdFDSFDSFDSFDSFDSFDSFDSFSDFs");
 
+		//Starting the BTDataCollector Service
 		Button btnStartService = (Button) findViewById(R.id.btnStartService);
 		btnStartService.setOnClickListener(new OnClickListener() {
-
 			@Override
 			public void onClick(View v) {
-				receiver = new MyReceiver(new Handler()); // Create the receiver
+				//Create the  BTDataReceiver
+				receiver = new BTDataReceiver(new Handler());
+				//Register the Broadcast Receiver (BTDataReceiver)
 				registerReceiver(receiver, new IntentFilter(
 						"com.test.sendintent.IntentToUnity"));
-				startService(new Intent(getBaseContext(), MyService.class));
+				Intent myintent = new Intent(getBaseContext(), BTDataCollectorService.class);
+				myintent.putExtra("FileName", Long.toString(System.currentTimeMillis()));
+				//startService(new Intent(getBaseContext(), BTDataCollectorService.class));
+				startService(myintent);
 			}
 		});
 
@@ -51,7 +55,8 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void onClick(View v) {
-				stopService(new Intent(getBaseContext(), MyService.class));
+				stopService(new Intent(getBaseContext(), BTDataCollectorService.class));
+				unregisterReceiver(receiver);
 			}
 		});
 
@@ -77,12 +82,12 @@ public class MainActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 
-	public static class MyReceiver extends BroadcastReceiver {
+	public static class BTDataReceiver extends BroadcastReceiver {
 
 		private final Handler handler; // Handler used to execute code on the UI
 										// thread
 
-		public MyReceiver(Handler handler) {
+		public BTDataReceiver(Handler handler) {
 			this.handler = handler;
 		}
 
@@ -98,7 +103,7 @@ public class MainActivity extends Activity {
 			String sentIntent = intent.getStringExtra(Intent.EXTRA_TEXT);
 			if (sentIntent != null) {
 				// We assigned it to our static variable
-				text = sentIntent;
+				text = sentIntent + "\n";
 			}
 			tvDetails.append(text);
 			// Toast.makeText(context, "Toast from broadcast receiver",

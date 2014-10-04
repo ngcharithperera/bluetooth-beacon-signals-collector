@@ -1,4 +1,4 @@
-package com.example.btbeaconcollector;
+package com.btbeaconmeter;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -21,21 +21,18 @@ import android.util.Log;
 import android.widget.Toast;
 import au.com.bytecode.opencsv.CSVWriter;
 
-public class MyService extends Service {
+public class BTDataCollectorService extends Service {
 
 	private LeScanCallback mLeScanCallback;
 	private BluetoothAdapter mBluetoothAdapter;
-
 	public static String BTData = "";
-
 	public String FOLDER_NAME = "BT";
 	public static ArrayList<BTBeacon> BTBeaconArray = new ArrayList<BTBeacon>();
 	public CSVWriter writer;
-
 	private final Handler handler = new Handler();
-
 	private int numIntent;
-	public String fullBTDataRecord="";
+	public String fullBTDataRecord = "";
+	public String filename = "default";
 	// It's the code we want our Handler to execute to send data
 	private Runnable sendData = new Runnable() {
 		// the specific method which will be executed by the handler
@@ -62,7 +59,7 @@ public class MyService extends Service {
 			// String s = "01 33 44 55 66 01 #"+50+"#1.4142135623730951";
 			// s=generateString();
 
-			sendIntent.putExtra(Intent.EXTRA_TEXT, BTData);
+			sendIntent.putExtra(Intent.EXTRA_TEXT, fullBTDataRecord);
 			// And here it goes ! our message is send to any other app that want
 			// to listen to it.
 			sendBroadcast(sendIntent);
@@ -83,6 +80,7 @@ public class MyService extends Service {
 	// When service is started
 	@Override
 	public void onStart(Intent intent, int startid) {
+		filename = intent.getStringExtra("FileName");
 		numIntent = 0;
 		// We first start the Handler
 		handler.removeCallbacks(sendData);
@@ -92,6 +90,7 @@ public class MyService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		filename = intent.getStringExtra("FileName");
 		initBluetooth();
 		Log.d("charith", "Intent ");
 		numIntent = 0;
@@ -101,18 +100,19 @@ public class MyService extends Service {
 
 		return START_STICKY;
 	}
-	
 
 	@Override
 	public void onDestroy() {
-		Toast toast = Toast.makeText(getApplicationContext(), "The service stopped", 3000);
+		Toast toast = Toast.makeText(getApplicationContext(),
+				"The service stopped", 3000);
 		toast.show();
 		super.onDestroy();
 	}
 
 	@Override
 	public void onCreate() {
-		Toast toast = Toast.makeText(getApplicationContext(), "The service Starteed", 3000);
+		Toast toast = Toast.makeText(getApplicationContext(),
+				"The service Starteed", 3000);
 		toast.show();
 		super.onCreate();
 	}
@@ -134,7 +134,6 @@ public class MyService extends Service {
 
 			}
 		}
-		// BTBeaconArray.clear();
 		return BTData;
 	}
 
@@ -142,17 +141,11 @@ public class MyService extends Service {
 		boolean isOnList = false;
 		int index = 0;
 		for (int i = 0; i < BTBeaconArray.size(); i++) {
-
-			// Log.d("charith", BTBeaconArray.get(i).getId());
-			// Log.d("charith", id);
-
 			if (BTBeaconArray.get(i).getId().contains(id)) {
 				isOnList = true;
 				index = i;
 			}
-
 		}
-
 		if (isOnList) {
 			return BTBeaconArray.get(index);
 		} else {
@@ -197,10 +190,12 @@ public class MyService extends Service {
 
 	public void initBluetooth() {
 		try {
-			writer = new CSVWriter(new FileWriter(Environment
-					.getExternalStorageDirectory().getAbsolutePath()
-					+ File.separator + FOLDER_NAME + File.separator + "yourfile.csv"),
-					'\t');
+			writer = new CSVWriter(
+					new FileWriter(Environment.getExternalStorageDirectory()
+							.getAbsolutePath()
+							+ File.separator
+							+ FOLDER_NAME
+							+ File.separator + filename), '\t');
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -215,69 +210,48 @@ public class MyService extends Service {
 			@Override
 			public void onLeScan(final BluetoothDevice device, final int rssi,
 					final byte[] scanRecord) {
-				Log.d("charith2", "onLeScan");
-				// code to be executed when a signal is heard
-
-				// new Thread(new Runnable() {
-				// public void run() {
-
-				Log.d("charith2", "22222");
-
-				String payload = Arrays.toString(scanRecord).substring(78, 80);
-				Integer total = 0;
-				Integer average = 0;
-				Integer sd = 0;
-				DecimalFormat dec = new DecimalFormat("#.00");
-
+//				Log.d("charith2", "onLeScan");
+//
+//				Log.d("charith2", "22222");
+//
+//				String payload = Arrays.toString(scanRecord).substring(78, 80);
+//				Integer total = 0;
+//				Integer average = 0;
+//				Integer sd = 0;
+//				DecimalFormat dec = new DecimalFormat("#.00");
+//
 				final StringBuilder stringBuilder = new StringBuilder(
 						scanRecord.length);
 				for (byte byteChar : scanRecord)
 					stringBuilder.append(String.format("%02X ", byteChar));
-
+//
 				String id = stringBuilder.substring(51, 69);
-
-				Log.d("charith2", id);
-
-				BTBeacon vBTBeacon = getBTBeacon(id);
-				vBTBeacon.setId(stringBuilder.substring(51, 69));
-				vBTBeacon.setRssi(Integer.toString(rssi));
-				vBTBeacon.setSd(calculateSD(rssi));
-
-				composeBTData();
-
-				Log.d("charith2", BTData);
+//
+//				Log.d("charith2", id);
+//
+//				BTBeacon vBTBeacon = getBTBeacon(id);
+//				vBTBeacon.setId(stringBuilder.substring(51, 69));
+//				vBTBeacon.setRssi(Integer.toString(rssi));
+//				vBTBeacon.setSd(calculateSD(rssi));
+//
+//				composeBTData();
+//
+//				Log.d("charith2", BTData);
 
 				try {
 					long timestamp = System.currentTimeMillis();
-					
-					fullBTDataRecord = Long.toString(timestamp) +"#"+ id + "#"+ Integer.toString(rssi); 		
-							
-					// feed in your array (or convert your data to an
-					// array)
-					
-					//String[] entries = "first#second#third".split("#");
+					fullBTDataRecord = Long.toString(timestamp) + "#" + id
+							+ "#" + Integer.toString(rssi);
 					String[] entries = fullBTDataRecord.split("#");
-					writer.writeNext(entries);		
+					writer.writeNext(entries);
 					writer.flushQuietly();
-					
-					
-					//writer.close();
+					// writer.close();
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
-					
 				}
-
-				// }
-
-				// }).start();
-
 			}
-
 		};
-
 		mBluetoothAdapter.startLeScan(mLeScanCallback);
 		Log.d("MainActivityForTommy", "Scan was started");
-
 	}
 }

@@ -1,4 +1,6 @@
-package com.example.btbeaconcollector;
+/*Java Bean to store Bluetooth Beacon data*/
+
+package com.btbeaconmeter;
 
 public class BTBeacon {
 	String id;
