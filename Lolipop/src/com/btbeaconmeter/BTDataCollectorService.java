@@ -10,9 +10,11 @@ import java.util.List;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothAdapter.LeScanCallback;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
 import android.os.Environment;
 import android.os.Handler;
@@ -23,8 +25,11 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 public class BTDataCollectorService extends Service {
 
-	private LeScanCallback mLeScanCallback;
+	// private LeScanCallback mLeScanCallback;
 	private BluetoothAdapter mBluetoothAdapter;
+	private BluetoothLeScanner scanner;
+	private ScanCallback mScanCallback;
+	private ScanSettings settings;
 	public static String BTData = "";
 	public String FOLDER_NAME = "BT";
 	public static ArrayList<BTBeacon> BTBeaconArray = new ArrayList<BTBeacon>();
@@ -33,6 +38,8 @@ public class BTDataCollectorService extends Service {
 	private int numIntent;
 	public String fullBTDataRecord = "";
 	public String filename = "default";
+	
+	int i= 0;
 	// It's the code we want our Handler to execute to send data
 	private Runnable sendData = new Runnable() {
 		// the specific method which will be executed by the handler
@@ -202,27 +209,70 @@ public class BTDataCollectorService extends Service {
 		}
 		Log.d("charith2", "initBluetooth");
 		// Bluetooth SETUP
-		final BluetoothManager manager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
-		mBluetoothAdapter = manager.getAdapter();
+		// final BluetoothManager manager = (BluetoothManager)
+		// getSystemService(BLUETOOTH_SERVICE);
+		// mBluetoothAdapter = manager.getAdapter();
+		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		scanner = mBluetoothAdapter.getBluetoothLeScanner();
+
+		settings = new ScanSettings.Builder().setScanMode(
+				ScanSettings.SCAN_MODE_LOW_LATENCY).build();
+		List<ScanFilter> filters = new ArrayList<ScanFilter>();
+
 		Log.d("charith2", "mBluetoothAdapter");
-		mLeScanCallback = new LeScanCallback() {
+
+		mScanCallback = new ScanCallback() {
+			// };
+
+			// mLeScanCallback = new LeScanCallback() {
+
+			// @Override
+			// public void onLeScan(final BluetoothDevice device, final int
+			// rssi,
+			// final byte[] scanRecord) {
+			//
+			// //
+			// final StringBuilder stringBuilder = new StringBuilder(
+			// scanRecord.length);
+			// for (byte byteChar : scanRecord)
+			// stringBuilder.append(String.format("%02X ", byteChar));
+			// //
+			// String id = stringBuilder.substring(51, 69);
+			// //
+			//
+			//
+			// try {
+			// long timestamp = System.currentTimeMillis();
+			// fullBTDataRecord = Long.toString(timestamp) + "#" + id
+			// + "#" + Integer.toString(rssi);
+			// String[] entries = fullBTDataRecord.split("#");
+			// writer.writeNext(entries);
+			// writer.flushQuietly();
+			// // writer.close();
+			// } catch (Exception e) {
+			// e.printStackTrace();
+			// }
+			// }
 
 			@Override
-			public void onLeScan(final BluetoothDevice device, final int rssi,
-					final byte[] scanRecord) {
-
-//
+			public void onScanResult(int callbackType, ScanResult result) {
+				// TODO Auto-generated method stub
+				//super.onScanResult(callbackType, result);
+				i++;
+				Log.d("charith", Integer.toString(i));
+				
+				byte[] scanRecord = result.getScanRecord().getBytes();
+				int rssi = result.getRssi();
 				final StringBuilder stringBuilder = new StringBuilder(
 						scanRecord.length);
 				for (byte byteChar : scanRecord)
 					stringBuilder.append(String.format("%02X ", byteChar));
-//
+				//
 				String id = stringBuilder.substring(51, 69);
-//
-
 
 				try {
-					long timestamp = System.currentTimeMillis();
+					//long timestamp = System.currentTimeMillis();
+					long timestamp = result.getTimestampNanos();
 					fullBTDataRecord = Long.toString(timestamp) + "#" + id
 							+ "#" + Integer.toString(rssi);
 					String[] entries = fullBTDataRecord.split("#");
@@ -232,9 +282,12 @@ public class BTDataCollectorService extends Service {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+
 			}
 		};
-		mBluetoothAdapter.startLeScan(mLeScanCallback);
+		// mBluetoothAdapter.startLeScan(mLeScanCallback);
+		scanner.startScan(filters, settings, mScanCallback);
+
 		Log.d("MainActivityForTommy", "Scan was started");
 	}
 }

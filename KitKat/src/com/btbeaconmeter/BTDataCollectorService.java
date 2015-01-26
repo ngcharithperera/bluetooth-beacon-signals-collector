@@ -13,7 +13,12 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothAdapter.LeScanCallback;
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -21,7 +26,8 @@ import android.util.Log;
 import android.widget.Toast;
 import au.com.bytecode.opencsv.CSVWriter;
 
-public class BTDataCollectorService extends Service {
+public class BTDataCollectorService extends Service implements
+SensorEventListener {
 
 	private LeScanCallback mLeScanCallback;
 	private BluetoothAdapter mBluetoothAdapter;
@@ -33,10 +39,20 @@ public class BTDataCollectorService extends Service {
 	private int numIntent;
 	public String fullBTDataRecord = "";
 	public String filename = "default";
+	
+	
+	private SensorManager mSensorManager;
+	//private Sensor mSensor;
+	private Sensor snAccelerometer;
+	private float accelerationX_axis_incl_gravity = 0;
+	private float accelerationY_axis_incl_gravity = 0;
+	private float accelerationZ_axis_incl_gravity = 0;
+	
 	// It's the code we want our Handler to execute to send data
 	private Runnable sendData = new Runnable() {
 		// the specific method which will be executed by the handler
 		public void run() {
+
 			numIntent++;
 
 			// sendIntent is the object that will be broadcast outside our app
@@ -80,6 +96,12 @@ public class BTDataCollectorService extends Service {
 	// When service is started
 	@Override
 	public void onStart(Intent intent, int startid) {
+
+
+		
+		
+		
+		
 		filename = intent.getStringExtra("FileName");
 		numIntent = 0;
 		// We first start the Handler
@@ -90,6 +112,16 @@ public class BTDataCollectorService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		
+		if (mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
+			snAccelerometer = mSensorManager
+					.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+			mSensorManager.registerListener(
+					BTDataCollectorService.this,
+					snAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
+		}
 		filename = intent.getStringExtra("FileName");
 		initBluetooth();
 		Log.d("charith", "Intent ");
@@ -225,6 +257,10 @@ public class BTDataCollectorService extends Service {
 					long timestamp = System.currentTimeMillis();
 					fullBTDataRecord = Long.toString(timestamp) + "#" + id
 							+ "#" + Integer.toString(rssi);
+					fullBTDataRecord = fullBTDataRecord +  "#" + 
+							Float.toString(accelerationX_axis_incl_gravity)+ "#" + 
+							Float.toString(accelerationY_axis_incl_gravity)+ "#" + 
+							Float.toString(accelerationZ_axis_incl_gravity);
 					String[] entries = fullBTDataRecord.split("#");
 					writer.writeNext(entries);
 					writer.flushQuietly();
@@ -236,5 +272,21 @@ public class BTDataCollectorService extends Service {
 		};
 		mBluetoothAdapter.startLeScan(mLeScanCallback);
 		Log.d("MainActivityForTommy", "Scan was started");
+	}
+
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+			accelerationX_axis_incl_gravity = event.values[0];
+			accelerationY_axis_incl_gravity = event.values[1];
+			accelerationZ_axis_incl_gravity = event.values[2];
+		}
+		
+	}
+
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+		// TODO Auto-generated method stub
+		
 	}
 }
