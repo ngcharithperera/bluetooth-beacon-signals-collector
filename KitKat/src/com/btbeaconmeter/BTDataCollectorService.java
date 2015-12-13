@@ -87,27 +87,18 @@ SensorEventListener {
 		}
 
 		private String generateString() {
-			// TODO Auto-generated method stub
 			return null;
 		}
-
 	};
 
 	// When service is started
 	@Override
 	public void onStart(Intent intent, int startid) {
-
-
-		
-		
-		
-		
 		filename = intent.getStringExtra("FileName");
 		numIntent = 0;
 		// We first start the Handler
 		handler.removeCallbacks(sendData);
 		handler.postDelayed(sendData, 1000);
-
 	}
 
 	@Override
