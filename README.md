@@ -1,4 +1,4 @@
-# bluetooth-beacon-signals-collector
+# Bluetooth Beacon Signals Collector
 This Android app collects BLE beacon data
 
 
